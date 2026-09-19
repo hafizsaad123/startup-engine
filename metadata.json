@@ -1,0 +1,6 @@
+{
+  "name": "Startup Engine Pakistan",
+  "description": "AI Startup Validator & Ecosystem Platform explicitly tailored for the Pakistani market with PKR economics, COD RTO modeling, and SECP/FBR compliance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
