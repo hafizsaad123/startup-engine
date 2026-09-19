@@ -25,9 +25,14 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ currentPath, onNavigate, children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    onNavigate('/login');
+  };
 
   const navItems = [
     {
@@ -199,7 +204,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ currentPath, o
               Public Home
             </button>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-1 hover:text-rose-400 transition-colors"
             >
               <LogOut className="h-3.5 w-3.5" />

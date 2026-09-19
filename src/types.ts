@@ -43,6 +43,7 @@ export interface UserProfile {
   city?: CityTier | string;
   subscription_tier: 'free' | 'founder_pro' | 'investor_ready';
   created_at: string;
+  is_demo?: boolean;
 }
 
 export interface StartupIdeaInput {

@@ -391,22 +391,22 @@ export const SupabaseStore = {
   getUser(): UserProfile | null {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_USER);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id) return parsed;
+      }
     } catch {
       // ignore
     }
-    const defaultUser: UserProfile = {
-      id: 'usr_pak_founder_01',
-      email: 'founder@pakistanstartup.pk',
-      full_name: 'Saad Ahmed',
-      company_name: 'VentureScale Pakistan',
-      phone_number: '+92 300 8472910',
-      city: 'Lahore',
-      subscription_tier: 'founder_pro',
-      created_at: new Date().toISOString(),
-    };
-    this.saveUser(defaultUser);
-    return defaultUser;
+    return null;
+  },
+
+  clearUser() {
+    try {
+      localStorage.removeItem(STORAGE_KEY_USER);
+    } catch {
+      // ignore
+    }
   },
 
   async getUserAsync(): Promise<UserProfile | null> {
@@ -424,13 +424,28 @@ export const SupabaseStore = {
             id: profile.id,
             email: profile.email || session.user.email || '',
             full_name: profile.full_name || session.user.user_metadata?.full_name || 'Founder',
-            company_name: profile.company_name || 'Pakistani Venture',
-            phone_number: profile.phone_number || '',
-            city: profile.city || 'Lahore',
+            company_name: profile.company_name || session.user.user_metadata?.company_name || 'Pakistani Venture',
+            phone_number: profile.phone_number || session.user.user_metadata?.phone_number || '',
+            city: profile.city || session.user.user_metadata?.city || 'Lahore',
             subscription_tier: profile.subscription_tier || 'founder_pro',
             created_at: profile.created_at || new Date().toISOString(),
           };
           this.saveUser(user);
+          return user;
+        } else {
+          // If profile does not exist yet in profiles table, create from verified Supabase session
+          const user: UserProfile = {
+            id: session.user.id,
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name || 'Founder',
+            company_name: session.user.user_metadata?.company_name || 'Pakistani Venture',
+            phone_number: session.user.user_metadata?.phone_number || '',
+            city: session.user.user_metadata?.city || 'Lahore',
+            subscription_tier: 'founder_pro',
+            created_at: new Date().toISOString(),
+          };
+          this.saveUser(user);
+          await this.saveUserAsync(user);
           return user;
         }
       }
@@ -446,8 +461,10 @@ export const SupabaseStore = {
     } catch {
       // ignore
     }
-    // Asynchronously sync to Supabase profiles table
-    this.saveUserAsync(user).catch(() => {});
+    // Asynchronously sync real users to Supabase profiles table
+    if (!user.is_demo) {
+      this.saveUserAsync(user).catch(() => {});
+    }
   },
 
   async saveUserAsync(user: UserProfile) {

@@ -93,8 +93,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               </button>
               <button
                 id="header-logout-btn"
-                onClick={logout}
-                className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1"
+                onClick={async () => {
+                  await logout();
+                  handleNav('/login');
+                }}
+                className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 transition-colors"
               >
                 Sign Out
               </button>

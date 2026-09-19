@@ -122,7 +122,7 @@ function AppContent() {
           {currentPath === '/pricing' && <PricingPage onNavigate={navigate} />}
           {currentPath === '/login' && <LoginPage onNavigate={navigate} />}
           {currentPath === '/signup' && <SignupPage onNavigate={navigate} />}
-          {currentPath === '/forgot-password' && <ForgotPasswordPage onNavigate={navigate} />}
+          {(currentPath === '/forgot-password' || currentPath === '/reset-password') && <ForgotPasswordPage onNavigate={navigate} />}
         </div>
         <Footer onNavigate={navigate} />
       </div>

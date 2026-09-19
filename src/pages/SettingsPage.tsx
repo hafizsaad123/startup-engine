@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SlipUploadModal } from '../components/reports/SlipUploadModal';
@@ -9,19 +9,28 @@ export const SettingsPage: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { language, setLanguage } = useLanguage();
 
-  const [fullName, setFullName] = useState(user?.full_name || 'Saad Ahmed');
-  const [companyName, setCompanyName] = useState(user?.company_name || 'Pakistani Venture');
-  const [phone, setPhone] = useState(user?.phone_number || '+92 300 8472910');
+  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [companyName, setCompanyName] = useState(user?.company_name || '');
+  const [phone, setPhone] = useState(user?.phone_number || '');
   const [city, setCity] = useState<CityTier>((user?.city as CityTier) || 'Lahore');
   const [saved, setSaved] = useState(false);
   const [slipModalOpen, setSlipModalOpen] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      setFullName(user.full_name || '');
+      setCompanyName(user.company_name || '');
+      setPhone(user.phone_number || '');
+      if (user.city) setCity(user.city as CityTier);
+    }
+  }, [user]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({
-      full_name: fullName,
-      company_name: companyName,
-      phone_number: phone,
+    await updateUser({
+      full_name: fullName.trim(),
+      company_name: companyName.trim(),
+      phone_number: phone.trim(),
       city,
     });
     setSaved(true);
