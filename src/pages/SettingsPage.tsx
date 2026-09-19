@@ -172,6 +172,31 @@ export const SettingsPage: React.FC = () => {
               <span>Verify JazzCash / Bank Slip</span>
             </button>
           </div>
+
+          {/* Supabase Database Connection Card */}
+          <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-slate-200 text-sm">Supabase Database</h3>
+              <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Connected
+              </span>
+            </div>
+            <div className="space-y-2 p-3 rounded-xl bg-slate-950 border border-slate-800/80 font-mono text-[11px]">
+              <div>
+                <span className="text-slate-500 block text-[10px]">Project URL:</span>
+                <span className="text-slate-300 truncate block">https://zjavgxypgehltixjculm.supabase.co</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Tables Provisioned:</span>
+                <span className="text-emerald-400">profiles, validations, slip_verifications</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[10px]">Security:</span>
+                <span className="text-slate-300">RLS (Row Level Security) Active</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

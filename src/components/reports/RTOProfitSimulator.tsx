@@ -19,6 +19,17 @@ export const RTOProfitSimulator: React.FC<RTOProfitSimulatorProps> = ({
   const [returnFreight, setReturnFreight] = useState<number>(120);
   const [cac, setCac] = useState<number>(initialEconomics.estimated_cac_pkr || 280);
 
+  // Sync if initialEconomics changes dynamically
+  React.useEffect(() => {
+    if (initialEconomics) {
+      if (initialEconomics.selling_price_pkr) setSellingPrice(initialEconomics.selling_price_pkr);
+      if (initialEconomics.cogs_pkr) setCogs(initialEconomics.cogs_pkr);
+      if (initialEconomics.rto_rate_pct) setRtoRate(initialEconomics.rto_rate_pct);
+      if (initialEconomics.logistics_forward_pkr) setForwardFreight(initialEconomics.logistics_forward_pkr);
+      if (initialEconomics.estimated_cac_pkr) setCac(initialEconomics.estimated_cac_pkr);
+    }
+  }, [initialEconomics]);
+
   // Calculations
   const packaging = Math.round(sellingPrice * 0.035);
   const gatewayCodFee = Math.round(sellingPrice * 0.012 + 10);

@@ -34,12 +34,27 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
   const [monetization, setMonetization] = useState<MonetizationModel>('Cash-on-Delivery (COD) Physical Goods');
   const [reportLanguage, setReportLanguage] = useState<'english' | 'roman_urdu' | 'both'>('both');
 
+  // Dynamic Unit Economics inputs (100% user-customizable, no hardcoding)
+  const [sellingPrice, setSellingPrice] = useState<number>(2800);
+  const [cogs, setCogs] = useState<number>(1200);
+  const [courier, setCourier] = useState<string>('Trax Logistics');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
 
+  // Live client-side calculated margin preview
+  const isCod = monetization.toLowerCase().includes('cod');
+  const estimatedDelivery = isCod ? (courier.includes('CallCourier') ? 210 : courier.includes('Leopards') ? 250 : 220) : 0;
+  const estimatedPackaging = Math.round(sellingPrice * 0.035);
+  const estimatedRtoLoss = isCod ? Math.round(0.16 * (estimatedDelivery + 110)) : 0;
+  const estimatedCac = Math.round(sellingPrice * 0.11);
+  const estimatedNet = sellingPrice - (cogs + estimatedPackaging + estimatedDelivery + estimatedRtoLoss + estimatedCac);
+  const estimatedMarginPct = sellingPrice > 0 ? Math.round((estimatedNet / sellingPrice) * 1000) / 10 : 0;
+
   const stages = [
+    'Connecting with live Supabase database & validating session...',
     'Parsing Pakistani Demographics & SEC purchasing power...',
-    'Simulating Cash-on-Delivery (COD) & 18% Trax/CallCourier return loss...',
+    `Simulating Cash-on-Delivery (COD) & ${courier} return loss...`,
     'Analyzing SECP SMC-Pvt Ltd incorporation & PRA/SRB sales tax thresholds...',
     'Benchmarking against Indus Valley Capital & Sarmayacar venture theses...',
     'Assembling 30-Day WhatsApp & Meta MVP Go-To-Market Plan...',
@@ -53,6 +68,9 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
       setCity('Karachi');
       setTargetSec('SEC B (Middle Class & Small Business)');
       setMonetization('Cash-on-Delivery (COD) Physical Goods');
+      setSellingPrice(3200);
+      setCogs(1350);
+      setCourier('Trax Logistics');
     } else if (exampleKey === 'b2b') {
       setTitle('KiryanaDirect — Wholesale Inventory Consolidation');
       setDescription('B2B digital ordering app for 5,000 neighborhood kiryana grocery shops in Lahore. Next-day delivery with cash collection on delivery and digital khata ledger.');
@@ -60,6 +78,9 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
       setCity('Lahore');
       setTargetSec('SEC C (Mass Market Retailers)');
       setMonetization('Wholesale Margin & Distribution Fee');
+      setSellingPrice(15000);
+      setCogs(12800);
+      setCourier('CallCourier');
     } else {
       setTitle('TaleemAI — Matric & FSc Exam Prep in Roman Urdu');
       setDescription('WhatsApp-based AI tutor that answers board exam questions in conversational Roman Urdu with audio explanations for middle-class students across Punjab & KPK.');
@@ -67,6 +88,9 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
       setCity('Islamabad / Rawalpindi');
       setTargetSec('SEC B (Middle Class & Small Business)');
       setMonetization('Monthly Subscription (EasyPaisa/JazzCash)');
+      setSellingPrice(4500);
+      setCogs(450);
+      setCourier('Direct Digital Delivery');
     }
   };
 
@@ -91,9 +115,9 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
       monetization,
       language_preference: reportLanguage,
       language_mode: reportLanguage,
-      expected_selling_price_pkr: 2800,
-      estimated_cogs_pkr: 1200,
-      courier_preference: 'Trax Logistics',
+      expected_selling_price_pkr: Number(sellingPrice) || 2800,
+      estimated_cogs_pkr: Number(cogs) || 1200,
+      courier_preference: courier,
     };
 
     try {
@@ -115,8 +139,8 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
     } catch (err) {
       console.warn('API fetch notice, utilizing local deterministic validation engine:', err);
       clearInterval(interval);
-      // Generate deterministic Pakistani fallback report
-      const fallbackReport = SupabaseStore.generateMockValidation(inputData);
+      // Generate fully dynamic Pakistani fallback report with user inputs
+      const fallbackReport = SupabaseStore.generateDynamicValidation(inputData);
       SupabaseStore.saveReport(fallbackReport);
       onReportGenerated(fallbackReport);
       onNavigate(`/dashboard/report/${fallbackReport.id}`);
@@ -302,6 +326,97 @@ export const ValidationWizard: React.FC<ValidationWizardProps> = ({ onNavigate, 
                 <option value="Monthly Subscription (EasyPaisa/JazzCash)">Monthly Subscription (EasyPaisa/JazzCash)</option>
                 <option value="Wholesale Margin & Distribution Fee">Wholesale Margin & Distribution Fee</option>
               </select>
+            </div>
+          </div>
+
+          {/* Dynamic Unit Economics & Logistics Parameters */}
+          <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-200 font-semibold flex items-center gap-1.5 text-xs">
+                <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                Dynamic Unit Economics & Logistics Modeling
+              </span>
+              <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                100% Dynamic Engine
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-slate-400 text-[11px] mb-1">
+                  Expected Selling Price (PKR)
+                </label>
+                <input
+                  type="number"
+                  min="50"
+                  step="50"
+                  value={sellingPrice}
+                  onChange={(e) => setSellingPrice(Math.max(0, Number(e.target.value)))}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-emerald-500 outline-none text-xs font-mono"
+                  placeholder="2800"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-[11px] mb-1">
+                  Estimated Product COGS (PKR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={cogs}
+                  onChange={(e) => setCogs(Math.max(0, Number(e.target.value)))}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-emerald-500 outline-none text-xs font-mono"
+                  placeholder="1200"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-[11px] mb-1">
+                  Target Courier Partner
+                </label>
+                <select
+                  value={courier}
+                  onChange={(e) => setCourier(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-emerald-500 outline-none text-xs"
+                >
+                  <option value="Trax Logistics">Trax Logistics (PKR 220 / 1.2% COD)</option>
+                  <option value="CallCourier">CallCourier (PKR 210 / 1.0% COD)</option>
+                  <option value="Leopards Courier">Leopards Courier (PKR 250 / 1.5% COD)</option>
+                  <option value="M&P Express">M&P Express (PKR 240 / 1.2% COD)</option>
+                  <option value="TCS Pakistan">TCS Pakistan (PKR 280 / 1.8% COD)</option>
+                  <option value="Own Delivery Fleet">Own Rider Fleet (Local City Only)</option>
+                  <option value="Direct Digital Delivery">Direct Digital (No Physical Courier)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Live Instant Economics Preview */}
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-[11px]">
+              <div className="flex items-center gap-4 text-slate-400">
+                <span>COGS: <strong className="text-slate-200 font-mono">PKR {cogs.toLocaleString()}</strong></span>
+                {isCod && <span>Courier: <strong className="text-slate-200 font-mono">PKR {estimatedDelivery}</strong></span>}
+                {isCod && <span>Est. RTO Loss: <strong className="text-amber-400 font-mono">PKR {estimatedRtoLoss}</strong></span>}
+                <span>Est. CAC: <strong className="text-slate-200 font-mono">PKR {estimatedCac}</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">Net Profit / Order:</span>
+                <span className={`font-mono font-bold ${estimatedNet > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  PKR {estimatedNet.toLocaleString()} ({estimatedMarginPct}%)
+                </span>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                  estimatedMarginPct > 20
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : estimatedMarginPct > 10
+                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                }`}>
+                  {estimatedMarginPct > 20 ? 'Healthy Margin' : estimatedMarginPct > 10 ? 'Tight Margin' : 'Unviable Margin'}
+                </span>
+              </div>
             </div>
           </div>
 

@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RTOProfitSimulator } from '../components/reports/RTOProfitSimulator';
-import { UnitEconomicsData } from '../types';
-import { Calculator, DollarSign, Clock, ShieldAlert, TrendingUp, Info } from 'lucide-react';
+import { UnitEconomicsData, ValidationReportData } from '../types';
+import { SupabaseStore } from '../lib/supabase';
+import { Calculator, DollarSign, Clock, ShieldAlert, TrendingUp, Info, Layers, RefreshCw } from 'lucide-react';
 
 export const UnitEconomicsPage: React.FC = () => {
+  const [reports, setReports] = useState<ValidationReportData[]>(() => SupabaseStore.getReports());
+  const [selectedReportId, setSelectedReportId] = useState<string>('default');
+
   const [courierLagDays, setCourierLagDays] = useState<number>(10);
   const [dailyOrderVolume, setDailyOrderVolume] = useState<number>(25);
   const [avgOrderValue, setAvgOrderValue] = useState<number>(3200);
 
-  // Default initial values for Pakistan D2C
-  const initialEconomics: UnitEconomicsData = {
+  // Dynamic initial values for Pakistan D2C
+  const [currentEconomics, setCurrentEconomics] = useState<UnitEconomicsData>({
     selling_price_pkr: 3200,
     cogs_pkr: 1350,
     packaging_pkr: 110,
@@ -21,31 +25,85 @@ export const UnitEconomicsPage: React.FC = () => {
     net_contribution_margin_pkr: 682,
     net_margin_percentage: 21.3,
     meta_cpm_usd: 1.2,
+  });
+
+  useEffect(() => {
+    SupabaseStore.getReportsAsync().then((live) => {
+      setReports(live);
+    });
+  }, []);
+
+  const handleSelectReport = (id: string) => {
+    setSelectedReportId(id);
+    if (id === 'default') {
+      setCurrentEconomics({
+        selling_price_pkr: 3200,
+        cogs_pkr: 1350,
+        packaging_pkr: 110,
+        logistics_forward_pkr: 220,
+        payment_gateway_fee_pkr: 50,
+        estimated_cac_pkr: 320,
+        rto_rate_pct: 18,
+        rto_deadweight_loss_pkr: 468,
+        net_contribution_margin_pkr: 682,
+        net_margin_percentage: 21.3,
+        meta_cpm_usd: 1.2,
+      });
+      setAvgOrderValue(3200);
+      return;
+    }
+
+    const found = reports.find((r) => r.id === id);
+    if (found && found.unit_economics) {
+      setCurrentEconomics(found.unit_economics);
+      setAvgOrderValue(found.unit_economics.selling_price_pkr || 2800);
+    }
   };
 
   // Working Capital Float calculation
   // Outstanding cash locked with couriers during the lag period
   const totalLockedFloatPkr = dailyOrderVolume * avgOrderValue * courierLagDays;
-  const cogsOutflowRequired = dailyOrderVolume * (1350 + 110 + 220) * courierLagDays;
+  const cogsOutflowRequired = dailyOrderVolume * ((currentEconomics.cogs_pkr || 1200) + 110 + (currentEconomics.logistics_forward_pkr || 220)) * courierLagDays;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
       {/* Header */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
-          <Calculator className="w-3.5 h-3.5" />
-          <span>Module 3: Unit Economics & Cashflow Simulator</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+            <Calculator className="w-3.5 h-3.5" />
+            <span>Module 3: Unit Economics & Cashflow Simulator</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            Pakistani Unit Economics & Working Capital Float Engine
+          </h1>
+          <p className="text-xs text-slate-400">
+            Simulate real contribution margins accounting for 18% COD rejection loss and courier cash reconciliation lag (Trax, CallCourier, Leopards).
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-          Pakistani Unit Economics & Working Capital Float Engine
-        </h1>
-        <p className="text-xs text-slate-400">
-          Simulate real contribution margins accounting for 18% COD rejection loss and courier cash reconciliation lag (Trax, CallCourier, Leopards).
-        </p>
+
+        {/* Dynamic Venture Selector */}
+        <div className="shrink-0">
+          <label className="block text-[11px] text-slate-400 font-medium mb-1">
+            Load Economics from Supabase Venture:
+          </label>
+          <select
+            value={selectedReportId}
+            onChange={(e) => handleSelectReport(e.target.value)}
+            className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-xs font-medium focus:border-emerald-500 outline-none w-full sm:w-64"
+          >
+            <option value="default">Default Model (PKR 3,200 D2C Chappals)</option>
+            {reports.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.idea_title} (PKR {r.unit_economics?.selling_price_pkr?.toLocaleString()})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Simulator 1: Interactive RTO & Net Margin */}
-      <RTOProfitSimulator initialEconomics={initialEconomics} />
+      <RTOProfitSimulator initialEconomics={currentEconomics} />
 
       {/* Simulator 2: Working Capital & Courier Float Buffer */}
       <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-6 text-xs">
